@@ -1,4 +1,5 @@
 import {
+  Dimensions,
   FlatList,
   StyleSheet,
   Text,
@@ -6,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {useStore} from '../store/store';
 import {useBottomTabBarHeight} from '@react-navigation/bottom-tabs';
 import {StatusBar} from 'react-native';
@@ -44,7 +45,7 @@ const getCoffeeList = (category: string, data: any) => {
   }
 };
 
-const HomeScreen = () => {
+const HomeScreen = ({navigation}: any) => {
   const coffeeList = useStore((state: any) => state.coffeeList);
   const beanList = useStore((state: any) => state.beanList);
   const [categories, setCategories] = useState(
@@ -59,7 +60,33 @@ const HomeScreen = () => {
     getCoffeeList(categoryIndex.category, coffeeList),
   );
 
+  const listRef: any = useRef<FlatList>();
   const tabBarHeight = useBottomTabBarHeight();
+
+  const searchCoffee = (search: string) => {
+    if (search != '') {
+      listRef?.current?.scrollToOffset({
+        animated: true,
+        offset: 0,
+      });
+      setCategoryIndex({index: 0, category: categories[0]});
+      setSortedCoffee([
+        ...coffeeList.filter((item: any) =>
+          item.name.toLowerCase().includes(search.toLowerCase()),
+        ),
+      ]);
+    }
+  };
+
+  const resetSearchCoffee = () => {
+    listRef?.current?.scrollToOffset({
+      animated: true,
+      offset: 0,
+    });
+    setCategoryIndex({index: 0, category: categories[0]});
+    setSortedCoffee([...coffeeList]);
+    setSearchText('');
+  };
 
   return (
     <View style={styles.screenContainer}>
@@ -76,7 +103,10 @@ const HomeScreen = () => {
 
         {/* Search input */}
         <View style={styles.searchContainer}>
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity
+            onPress={() => {
+              searchCoffee(searchText);
+            }}>
             <CustomIcon
               style={styles.searchIcon}
               name="search"
@@ -92,9 +122,27 @@ const HomeScreen = () => {
             placeholder="Find coffee/bean..."
             placeholderTextColor={COLORS.primaryLightGreyHex}
             value={searchText}
-            onChangeText={text => setSearchText(text)}
+            onChangeText={text => {
+              setSearchText(text);
+              searchCoffee(text);
+            }}
             style={styles.searchInput}
           />
+          {searchText.length > 0 ? (
+            <TouchableOpacity
+              onPress={() => {
+                resetSearchCoffee();
+              }}>
+              <CustomIcon
+                style={styles.searchIcon}
+                name="close"
+                size={FONTSIZE.size_16}
+                color={COLORS.primaryLightGreyHex}
+              />
+            </TouchableOpacity>
+          ) : (
+            <></>
+          )}
         </View>
 
         {/* Category list */}
@@ -107,6 +155,10 @@ const HomeScreen = () => {
               <TouchableOpacity
                 style={styles.categoryItem}
                 onPress={() => {
+                  listRef?.current?.scrollToOffset({
+                    animated: true,
+                    offset: 0,
+                  });
                   setCategoryIndex({index: index, category: categories[index]});
                   setSortedCoffee([
                     ...getCoffeeList(categories[index], coffeeList),
@@ -135,14 +187,27 @@ const HomeScreen = () => {
 
         {/* Coffee list */}
         <FlatList
+          ref={listRef}
           horizontal
+          ListEmptyComponent={
+            <View style={styles.emptyListContainer}>
+              <Text style={styles.categoryText}>No Coffee Available</Text>
+            </View>
+          }
           showsHorizontalScrollIndicator={false}
           data={sortedCoffee}
           contentContainerStyle={styles.coffeeListContainer}
           keyExtractor={item => item.id}
           renderItem={({item}) => {
             return (
-              <TouchableOpacity onPress={() => {}}>
+              <TouchableOpacity
+                onPress={() => {
+                  navigation.push('Details', {
+                    id: item.id,
+                    index: item.index,
+                    type: item.type,
+                  });
+                }}>
                 <CoffeeCardItem
                   id={item.id}
                   index={item.index}
@@ -174,7 +239,14 @@ const HomeScreen = () => {
           keyExtractor={item => item.id}
           renderItem={({item}) => {
             return (
-              <TouchableOpacity onPress={() => {}}>
+              <TouchableOpacity
+                onPress={() => {
+                  navigation.push('Details', {
+                    id: item.id,
+                    index: item.index,
+                    type: item.type,
+                  });
+                }}>
                 <CoffeeCardItem
                   id={item.id}
                   index={item.index}
@@ -253,6 +325,12 @@ const styles = StyleSheet.create({
     gap: SPACING.space_20,
     paddingVertical: SPACING.space_20,
     paddingHorizontal: SPACING.space_30,
+  },
+  emptyListContainer: {
+    width: Dimensions.get('window').width - SPACING.space_30 * 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.space_36 * 3.6,
   },
   coffeeBeanTitle: {
     fontSize: FONTSIZE.size_18,
