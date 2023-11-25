@@ -134,8 +134,7 @@ export const useStore = create(
             //   }
             // }
             const list = type === 'Coffee' ? state.coffeeList : state.beanList;
-            const targetList =
-              type === 'Coffee' ? state.favoriteList : state.beanList;
+            const targetList = state.favoriteList;
 
             const itemIndex = list.findIndex((item: any) => item.id === id);
 

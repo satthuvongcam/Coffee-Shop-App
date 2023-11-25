@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ToastAndroid,
 } from 'react-native';
 import React, {useRef, useState} from 'react';
 import {useStore} from '../store/store';
@@ -46,6 +47,9 @@ const getCoffeeList = (category: string, data: any) => {
 };
 
 const HomeScreen = ({navigation}: any) => {
+  const addToCart = useStore((state: any) => state.addToCart);
+  const calculateCartPrice = useStore((state: any) => state.calculateCartPrice);
+
   const coffeeList = useStore((state: any) => state.coffeeList);
   const beanList = useStore((state: any) => state.beanList);
   const [categories, setCategories] = useState(
@@ -86,6 +90,34 @@ const HomeScreen = ({navigation}: any) => {
     setCategoryIndex({index: 0, category: categories[0]});
     setSortedCoffee([...coffeeList]);
     setSearchText('');
+  };
+
+  const handleAddCoffeeCardToCart = ({
+    id,
+    index,
+    name,
+    roated,
+    imagelink_square,
+    special_ingredient,
+    type,
+    prices,
+  }: any) => {
+    addToCart({
+      id,
+      index,
+      name,
+      roated,
+      imagelink_square,
+      special_ingredient,
+      type,
+      prices,
+    });
+    calculateCartPrice();
+    ToastAndroid.showWithGravity(
+      `${name} is added to cart`,
+      ToastAndroid.SHORT,
+      ToastAndroid.CENTER,
+    );
   };
 
   return (
@@ -218,7 +250,7 @@ const HomeScreen = ({navigation}: any) => {
                   special_ingredient={item.special_ingredient}
                   average_rating={item.average_rating}
                   prices={item.prices[2]}
-                  buttonHandler={() => {}}
+                  buttonHandler={handleAddCoffeeCardToCart}
                 />
               </TouchableOpacity>
             );
@@ -257,7 +289,7 @@ const HomeScreen = ({navigation}: any) => {
                   special_ingredient={item.special_ingredient}
                   average_rating={item.average_rating}
                   prices={item.prices[2]}
-                  buttonHandler={() => {}}
+                  buttonHandler={handleAddCoffeeCardToCart}
                 />
               </TouchableOpacity>
             );
