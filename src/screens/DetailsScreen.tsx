@@ -22,7 +22,7 @@ import PaymentFooter from '../components/PaymentFooter';
 const DetailsScreen = ({navigation, route}: any) => {
   const itemOfIndex = useStore((state: any) =>
     route.params.type == 'Coffee' ? state.coffeeList : state.beanList,
-  )[route.params.index];
+  )[route.params.index]; 
 
   const [fullDesc, setFullDesc] = useState(false);
   const [price, setPrice] = useState(itemOfIndex.prices[0]);
@@ -46,7 +46,7 @@ const DetailsScreen = ({navigation, route}: any) => {
     id,
     index,
     name,
-    roated,
+    roasted,
     imagelink_square,
     special_ingredient,
     type,
@@ -56,7 +56,7 @@ const DetailsScreen = ({navigation, route}: any) => {
       id,
       index,
       name,
-      roated,
+      roasted,
       imagelink_square,
       special_ingredient,
       type,

@@ -7,7 +7,7 @@ import BeansData from '../data/BeansData';
 
 export const useStore = create(
   persist(
-    (set, _get) => ({
+    (set, get) => ({
       coffeeList: CoffeeData,
       beanList: BeansData,
       cartPrice: 0,
@@ -53,26 +53,36 @@ export const useStore = create(
           //   }
           // }),
           produce(state => {
-            const {cartList} = state;
-            const existingCartItemIndex = cartList.findIndex(
-              (item: any) => item.id === cartItem.id,
-            );
-
-            if (existingCartItemIndex !== -1) {
-              const existingCartItem = cartList[existingCartItemIndex];
-              const existingSizeIndex = existingCartItem.prices.findIndex(
-                (price: any) => price.size === cartItem.prices[0].size,
-              );
-
-              if (existingSizeIndex !== -1) {
-                existingCartItem.prices[existingSizeIndex].quantity++;
-              } else {
-                existingCartItem.prices.push(cartItem.prices[0]);
-                existingCartItem.prices.sort(
-                  (a: any, b: any) => a.size - b.size,
-                );
+            let found = false;
+            for (let i = 0; i < state.cartList.length; i++) {
+              if (state.cartList[i].id == cartItem.id) {
+                found = true;
+                let size = false;
+                for (let j = 0; j < state.cartList[i].prices.length; j++) {
+                  if (
+                    state.cartList[i].prices[j].size == cartItem.prices[0].size
+                  ) {
+                    size = true;
+                    state.cartList[i].prices[j].quantity++;
+                    break;
+                  }
+                }
+                if (size == false) {
+                  state.cartList[i].prices.push(cartItem.prices[0]);
+                }
+                state.cartList[i].prices.sort((a: any, b: any) => {
+                  if (a.size > b.size) {
+                    return -1;
+                  }
+                  if (a.size < b.size) {
+                    return 1;
+                  }
+                  return 0;
+                });
+                break;
               }
-            } else {
+            }
+            if (found == false) {
               state.cartList.push(cartItem);
             }
           }),
@@ -192,6 +202,137 @@ export const useStore = create(
             );
             if (spliceIndex !== -1) {
               state.favoriteList.splice(spliceIndex, 1);
+            }
+          }),
+        ),
+      incrementCartItemQuantity: (id: string, size: string) =>
+        set(
+          produce(state => {
+            // for (let i = 0; i < state.cartList.length; i++) {
+            //   if (state.cartList[i].id == id) {
+            //     for (let j = 0; j < state.cartList[i].prices.length; j++) {
+            //       if (state.cartList[i].prices[j].size == size) {
+            //         state.cartList[i].prices[j].quantity++;
+            //         break;
+            //       }
+            //     }
+            //   }
+            // }
+            const product = state.cartList.find((item: any) => item.id === id);
+
+            if (product) {
+              const price = product.prices.find((p: any) => p.size === size);
+
+              if (price) {
+                price.quantity++;
+              }
+            }
+          }),
+        ),
+      decrementCartItemQuantity: (id: string, size: string) =>
+        set(
+          produce(state => {
+            // for (let i = 0; i < state.cartList.length; i++) {
+            //   if (state.cartList[i].id == id) {
+            //     for (let j = 0; j < state.cartList[i].prices.length; j++) {
+            //       if (state.cartList[i].prices[j].size == size) {
+            //         if (state.cartList[i].prices.length > 1) {
+            //           if (state.cartList[i].prices[j].quantity > 1) {
+            //             price.quantity--;
+            //           } else {
+            //             state.cartList[i].prices.splice(j, 1);
+            //           }
+            //         } else {
+            //           if (state.cartList[i].prices[j].quantity > 1) {
+            //             price.quantity--;
+            //           } else {
+            //             state.cartList.splice(i, 1);
+            //           }
+            //         }
+            //         break;
+            //       }
+            //     }
+            //   }
+            // }
+            const itemIndex = state.cartList.findIndex(
+              (item: any) => item.id === id,
+            );
+
+            if (itemIndex !== -1) {
+              const prices = state.cartList[itemIndex].prices;
+              const priceIndex = prices.findIndex(
+                (price: any) => price.size === size,
+              );
+
+              if (priceIndex !== -1) {
+                const quantity = prices[priceIndex].quantity;
+
+                if (prices.length > 1 && quantity > 1) {
+                  prices[priceIndex].quantity--;
+                } else {
+                  prices.splice(priceIndex, 1);
+
+                  if (prices.length === 0) {
+                    state.cartList.splice(itemIndex, 1);
+                  }
+                }
+              }
+            }
+          }),
+        ),
+      addToOrderHistoryListFromCart: () =>
+        set(
+          produce(state => {
+            // let temp = state.cartList.reduce(
+            //   (accumulator: number, currentValue: any) =>
+            //     accumulator + parseFloat(currentValue.itemPrice),
+            //   0,
+            // );
+            // if (state.orderHistoryList.length > 0) {
+            //   state.orderHistoryList.unshift({
+            //     orderDate:
+            //       new Date().toDateString() +
+            //       ' ' +
+            //       new Date().toLocaleTimeString(),
+            //     cartList: state.cartList,
+            //     cartListPrice: temp.toFixed(2).toString(),
+            //   });
+            // } else {
+            //   state.orderHistoryList.push({
+            //     orderDate:
+            //       new Date().toDateString() +
+            //       ' ' +
+            //       new Date().toLocaleTimeString(),
+            //     cartList: state.cartList,
+            //     cartListPrice: temp.toFixed(2).toString(),
+            //   });
+            //   state.cartList = []
+            // }
+            if (state.cartList.length > 0) {
+              const temp = state.cartList.reduce(
+                (accumulator: number, currentValue: any) =>
+                  accumulator + parseFloat(currentValue.itemPrice),
+                0,
+              );
+
+              const orderDate =
+                new Date().toDateString() +
+                ' ' +
+                new Date().toLocaleTimeString();
+
+              const orderEntry = {
+                orderDate,
+                cartList: state.cartList,
+                cartListPrice: temp.toFixed(2).toString(),
+              };
+
+              if (state.orderHistoryList.length > 0) {
+                state.orderHistoryList.unshift(orderEntry);
+              } else {
+                state.orderHistoryList.push(orderEntry);
+              }
+
+              state.cartList = [];
             }
           }),
         ),
