@@ -194,8 +194,8 @@ export const useStore = create(
                 cartList: state.cartList,
                 cartListPrice: temp.toFixed(2).toString(),
               });
-              state.cartList = []
             }
+            state.cartList = [];
           }),
         ),
     }),
